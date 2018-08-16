@@ -3,6 +3,7 @@ import { AppActivationBridge } from './activation';
 import { AppCommandsBridge } from './commands';
 import { AppEnvironmentalVariableBridge } from './environmental';
 import { AppHttpBridge } from './http';
+import { AppListenerBridge } from './listeners';
 import { AppMessageBridge } from './messages';
 import { AppPersistenceBridge } from './persistence';
 import { AppRoomBridge } from './rooms';
@@ -15,9 +16,10 @@ export {
 	AppCommandsBridge,
 	AppEnvironmentalVariableBridge,
 	AppHttpBridge,
+	AppListenerBridge,
 	AppMessageBridge,
 	AppPersistenceBridge,
 	AppRoomBridge,
 	AppSettingBridge,
-	AppUserBridge
+	AppUserBridge,
 };

@@ -1,6 +1,6 @@
 Template.avatar.helpers({
-	imageUrl() {
-		let {url} = Template.instance().data;
+	src() {
+		let { url } = Template.instance().data;
 		if (!url) {
 			let username = this.username;
 			if (username == null && this.userId != null) {
@@ -18,6 +18,6 @@ Template.avatar.helpers({
 
 			url = getAvatarUrlFromUsername(username);
 		}
-		return `background-image:url(${ url });`;
-	}
+		return url;
+	},
 });

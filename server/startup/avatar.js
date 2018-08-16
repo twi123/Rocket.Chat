@@ -3,10 +3,11 @@ import _ from 'underscore';
 import sharp from 'sharp';
 
 Meteor.startup(function() {
-	WebApp.connectHandlers.use('/avatar/', Meteor.bindEnvironment(function(req, res/*, next*/) {
+	WebApp.connectHandlers.use('/avatar/', Meteor.bindEnvironment(function(req, res/* , next*/) {
 		const params = {
-			username: decodeURIComponent(req.url.replace(/^\//, '').replace(/\?.*$/, ''))
+			username: decodeURIComponent(req.url.replace(/^\//, '').replace(/\?.*$/, '')),
 		};
+		const cacheTime = req.query.cacheTime || RocketChat.settings.get('Accounts_AvatarCacheTime');
 
 		if (_.isEmpty(params.username)) {
 			res.writeHead(403);
@@ -47,7 +48,7 @@ Meteor.startup(function() {
 					return;
 				}
 
-				res.setHeader('Cache-Control', 'public, max-age=0');
+				res.setHeader('Cache-Control', `public, max-age=${ cacheTime }`);
 				res.setHeader('Expires', '-1');
 				res.setHeader('Content-Disposition', 'inline');
 				res.setHeader('Last-Modified', file.uploadedAt.toUTCString());
@@ -57,7 +58,7 @@ Meteor.startup(function() {
 				return FileUpload.get(file, req, res);
 			} else {
 				res.setHeader('Content-Type', 'image/svg+xml');
-				res.setHeader('Cache-Control', 'public, max-age=0');
+				res.setHeader('Cache-Control', `public, max-age=${ cacheTime }`);
 				res.setHeader('Expires', '-1');
 				res.setHeader('Last-Modified', 'Thu, 01 Jan 2015 00:00:00 GMT');
 
@@ -74,8 +75,8 @@ Meteor.startup(function() {
 				if (RocketChat.settings.get('UI_Use_Name_Avatar')) {
 					const user = RocketChat.models.Users.findOneByUsername(username, {
 						fields: {
-							name: 1
-						}
+							name: 1,
+						},
 					});
 
 					if (user && user.name) {
