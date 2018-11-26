@@ -1,4 +1,7 @@
 /* globals ReactiveVar, TAPi18n */
+import { Meteor } from 'meteor/meteor';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
 import toastr from 'toastr';
 import _ from 'underscore';
 
@@ -115,7 +118,7 @@ Template.RocketSearch.events = {
 			return evt.preventDefault();
 		}
 
-		const value = evt.target.value;
+		const { value } = evt.target;
 
 		if (evt.keyCode === 40 || evt.keyCode === 38) {
 			return evt.preventDefault();

@@ -1,3 +1,5 @@
+import { Meteor } from 'meteor/meteor';
+import { Accounts } from 'meteor/accounts-base';
 import {
 	Base,
 	ProgressStep,
@@ -5,7 +7,8 @@ import {
 	SelectionChannel,
 	SelectionUser,
 } from 'meteor/rocketchat:importer';
-
+import { RocketChatFile } from 'meteor/rocketchat:file';
+import { RocketChat } from 'meteor/rocketchat:lib';
 import _ from 'underscore';
 import s from 'underscore.string';
 import moment from 'moment';
@@ -23,7 +26,7 @@ export class HipChatImporter extends Base {
 
 	prepare(dataURI, sentContentType, fileName) {
 		super.prepare(dataURI, sentContentType, fileName);
-		const image = RocketChatFile.dataURIParse(dataURI).image;
+		const { image } = RocketChatFile.dataURIParse(dataURI);
 		// const contentType = ref.contentType;
 		const zip = new this.AdmZip(new Buffer(image, 'base64'));
 		const zipEntries = zip.getEntries();

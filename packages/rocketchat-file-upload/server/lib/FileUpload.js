@@ -1,5 +1,6 @@
 /* globals UploadFS */
 
+import { Meteor } from 'meteor/meteor';
 import fs from 'fs';
 import stream from 'stream';
 import mime from 'mime-type/with-db';
@@ -112,7 +113,7 @@ Object.assign(FileUpload, {
 						if (err != null) {
 							console.error(err);
 						}
-						const size = fs.lstatSync(tempFilePath).size;
+						const { size } = fs.lstatSync(tempFilePath);
 						this.getCollection().direct.update({ _id: file._id }, { $set: { size } });
 						future.return();
 					}));
@@ -161,29 +162,34 @@ Object.assign(FileUpload, {
 				},
 			};
 
-			if (metadata.orientation == null) {
-				return fut.return();
-			}
-
-			s.rotate()
-				.toFile(`${ tmpFile }.tmp`)
-				.then(Meteor.bindEnvironment(() => {
-					fs.unlink(tmpFile, Meteor.bindEnvironment(() => {
-						fs.rename(`${ tmpFile }.tmp`, tmpFile, Meteor.bindEnvironment(() => {
-							const size = fs.lstatSync(tmpFile).size;
-							this.getCollection().direct.update({ _id: file._id }, {
-								$set: {
-									size,
-									identify,
-								},
-							});
-							fut.return();
+			const reorientation = (cb) => {
+				if (!metadata.orientation) {
+					return cb();
+				}
+				s.rotate()
+					.toFile(`${ tmpFile }.tmp`)
+					.then(Meteor.bindEnvironment(() => {
+						fs.unlink(tmpFile, Meteor.bindEnvironment(() => {
+							fs.rename(`${ tmpFile }.tmp`, tmpFile, Meteor.bindEnvironment(() => {
+								cb();
+							}));
 						}));
-					}));
-				})).catch((err) => {
-					console.error(err);
-					fut.return();
+					})).catch((err) => {
+						console.error(err);
+						fut.return();
+					});
+
+				return;
+			};
+
+			reorientation(() => {
+				const { size } = fs.lstatSync(tmpFile);
+				this.getCollection().direct.update({ _id: file._id }, {
+					$set: { size, identify },
 				});
+
+				fut.return();
+			});
 		}));
 
 		return fut.wait();

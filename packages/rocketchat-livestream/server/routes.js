@@ -1,5 +1,7 @@
+import { Meteor } from 'meteor/meteor';
+import { RocketChat } from 'meteor/rocketchat:lib';
 import google from 'googleapis';
-const OAuth2 = google.auth.OAuth2;
+const { OAuth2 } = google.auth;
 
 RocketChat.API.v1.addRoute('livestream/oauth', {
 	get: function functionName() {

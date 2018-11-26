@@ -1,4 +1,5 @@
 import s from 'underscore.string';
+import { Accounts } from 'meteor/accounts-base';
 
 RocketChat._setUsername = function(userId, u) {
 	const username = s.trim(u);
@@ -34,6 +35,8 @@ RocketChat._setUsername = function(userId, u) {
 	} catch (e) {
 		console.error(e);
 	}
+	// Set new username*
+	RocketChat.models.Users.setUsername(user._id, username);
 	/* globals getAvatarSuggestionForUser */
 	user.username = username;
 	if (!previousUsername && RocketChat.settings.get('Accounts_SetDefaultAvatar') === true) {
@@ -45,9 +48,9 @@ RocketChat._setUsername = function(userId, u) {
 				RocketChat.setUserAvatar(user, avatarData.blob, avatarData.contentType, service);
 				gravatar = null;
 				return true;
-			} else {
-				gravatar = avatarData;
 			}
+			gravatar = avatarData;
+			return false;
 		});
 		if (gravatar != null) {
 			RocketChat.setUserAvatar(user, gravatar.blob, gravatar.contentType, 'gravatar');
@@ -74,8 +77,6 @@ RocketChat._setUsername = function(userId, u) {
 			fileStore.model.updateFileNameById(file._id, username);
 		}
 	}
-	// Set new username*
-	RocketChat.models.Users.setUsername(user._id, username);
 	return user;
 };
 

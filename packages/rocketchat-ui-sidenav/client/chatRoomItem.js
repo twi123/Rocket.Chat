@@ -1,3 +1,7 @@
+import { Tracker } from 'meteor/tracker';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
+
 Template.chatRoomItem.helpers({
 	roomData() {
 		let { name } = this;
@@ -40,7 +44,7 @@ Template.chatRoomItem.helpers({
 
 		if (!this.lastMessage && RocketChat.settings.get('Store_Last_Message')) {
 			const room = RocketChat.models.Rooms.findOne(this.rid || this._id, { fields: { lastMessage: 1 } });
-			roomData.lastMessage = room && room.lastMessage || { msg: t('No_messages_yet') };
+			roomData.lastMessage = (room && room.lastMessage) || { msg: t('No_messages_yet') };
 		}
 		return roomData;
 	},

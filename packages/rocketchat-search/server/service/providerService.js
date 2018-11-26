@@ -1,4 +1,5 @@
 /* globals RocketChat */
+import { Meteor } from 'meteor/meteor';
 import _ from 'underscore';
 
 import { validationService } from '../service/validationService';
@@ -75,7 +76,7 @@ class SearchProviderService {
 	start() {
 		SearchLogger.debug('Load data for all providers');
 
-		const providers = this.providers;
+		const { providers } = this;
 
 		// add settings for admininistration
 		RocketChat.settings.addGroup('Search', function() {

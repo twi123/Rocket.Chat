@@ -1,10 +1,17 @@
 /* globals menu popover renderMessageBody */
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
 import moment from 'moment';
 
 Template.sidebarItem.helpers({
 	or(...args) {
 		args.pop();
 		return args.some((arg) => arg);
+	},
+	streaming() {
+		return this.streamingOptions && Object.keys(this.streamingOptions).length;
 	},
 	isRoom() {
 		return this.rid || this._id;
@@ -31,8 +38,8 @@ function timeAgo(time) {
 	const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
 	return (
-		now.getDate() === time.getDate() && moment(time).format('LT') ||
-		yesterday.getDate() === time.getDate() && t('yesterday') ||
+		(now.getDate() === time.getDate() && moment(time).format('LT')) ||
+		(yesterday.getDate() === time.getDate() && t('yesterday')) ||
 		moment(time).format('L')
 	);
 }
@@ -67,6 +74,12 @@ Template.sidebarItem.onCreated(function() {
 			return this.renderedMessage = currentData.lastMessage.msg;
 		}
 
+		setLastMessageTs(this, currentData.lastMessage.ts);
+
+		if (currentData.lastMessage.t === 'e2e' && currentData.lastMessage.e2e !== 'done') {
+			return this.renderedMessage = '******';
+		}
+
 		const otherUser = RocketChat.settings.get('UI_Use_Real_Name') ? currentData.lastMessage.u.name || currentData.lastMessage.u.username : currentData.lastMessage.u.username;
 		const renderedMessage = renderMessageBody(currentData.lastMessage).replace(/<br\s?\\?>/g, ' ');
 		const sender = this.user._id === currentData.lastMessage.u._id ? t('You') : otherUser;
@@ -76,8 +89,6 @@ Template.sidebarItem.onCreated(function() {
 		} else {
 			this.renderedMessage = currentData.lastMessage.msg === '' ? t('user_sent_an_attachment', { user: sender }) : `${ sender }: ${ renderedMessage }`;
 		}
-
-		setLastMessageTs(this, currentData.lastMessage.ts);
 	});
 });
 

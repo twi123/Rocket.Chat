@@ -1,4 +1,6 @@
 /* globals Blaze, RocketChat */
+import { Template } from 'meteor/templating';
+
 RocketChat.tooltip = {
 	source: null,
 	initiated: false,
@@ -55,7 +57,7 @@ RocketChat.tooltip = {
 		const tip = $('.tooltip');
 
 		let top = sourcePos.top - tip.outerHeight() - 5;
-		let left = sourcePos.left;
+		let { left } = sourcePos;
 
 		left = left + (sourceWidth / 2) - (tip.outerWidth() / 2);
 

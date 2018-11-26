@@ -1,3 +1,4 @@
+import { Meteor } from 'meteor/meteor';
 import s from 'underscore.string';
 
 RocketChat.saveCustomFieldsWithoutValidation = function(userId, formData) {
@@ -21,7 +22,7 @@ RocketChat.saveCustomFieldsWithoutValidation = function(userId, formData) {
 				return;
 			}
 
-			const modifyRecordField = customFieldsMeta[fieldName].modifyRecordField;
+			const { modifyRecordField } = customFieldsMeta[fieldName];
 			const update = {};
 			if (modifyRecordField.array) {
 				update.$addToSet = {};

@@ -1,4 +1,9 @@
-/* globals Template, isSetNotNull */
+import { ReactiveVar } from 'meteor/reactive-var';
+import { RocketChat } from 'meteor/rocketchat:lib';
+import { Template } from 'meteor/templating';
+import { TAPi18n } from 'meteor/tap:i18n';
+import { isSetNotNull } from './function-isSet';
+
 const emojiCategories = {};
 /**
  * Turns category hash to a nice readable translated name
@@ -65,7 +70,7 @@ function getEmojisBySearchTerm(searchTerm) {
 
 		if (searchRegExp.test(emoji)) {
 			const emojiObject = RocketChat.emoji.list[emoji];
-			const emojiPackage = emojiObject.emojiPackage;
+			const { emojiPackage } = emojiObject;
 			let tone = '';
 			emoji = emoji.replace(/:/g, '');
 
@@ -228,7 +233,7 @@ Template.emojiPicker.events({
 	'click .emoji-list li'(event, instance) {
 		event.stopPropagation();
 
-		const emoji = event.currentTarget.dataset.emoji;
+		const { emoji } = event.currentTarget.dataset;
 		const actualTone = instance.tone;
 		let tone = '';
 

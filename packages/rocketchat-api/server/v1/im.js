@@ -1,3 +1,6 @@
+import { Meteor } from 'meteor/meteor';
+import { RocketChat } from 'meteor/rocketchat:lib';
+
 function findDirectMessageRoom(params, user) {
 	if ((!params.roomId || !params.roomId.trim()) && (!params.username || !params.username.trim())) {
 		throw new Meteor.Error('error-room-param-not-provided', 'Body param "roomId" or "username" is required');
@@ -68,7 +71,7 @@ RocketChat.API.v1.addRoute(['dm.counters', 'im.counters'], { authRequired: true 
 			user = ruserId;
 		}
 		const rs = findDirectMessageRoom(this.requestParams(), { _id: user });
-		const room = rs.room;
+		const { room } = rs;
 		const dm = rs.subscription;
 		lm = room.lm ? room.lm : room._updatedAt;
 
@@ -144,20 +147,14 @@ RocketChat.API.v1.addRoute(['dm.history', 'im.history'], { authRequired: true },
 			oldestDate = new Date(this.queryParams.oldest);
 		}
 
-		let inclusive = false;
-		if (this.queryParams.inclusive) {
-			inclusive = this.queryParams.inclusive;
-		}
+		const inclusive = this.queryParams.inclusive || false;
 
 		let count = 20;
 		if (this.queryParams.count) {
 			count = parseInt(this.queryParams.count);
 		}
 
-		let unreads = false;
-		if (this.queryParams.unreads) {
-			unreads = this.queryParams.unreads;
-		}
+		const unreads = this.queryParams.unreads || false;
 
 		let result;
 		Meteor.runAsUser(this.userId, () => {
@@ -185,19 +182,18 @@ RocketChat.API.v1.addRoute(['dm.members', 'im.members'], { authRequired: true },
 
 		const { offset, count } = this.getPaginationItems();
 		const { sort } = this.parseJsonQuery();
-		const cursor = RocketChat.models.Subscriptions.findByRoomId(findResult._id, {
-			sort: { 'u.username':  sort.username != null ? sort.username : 1 },
+		const cursor = RocketChat.models.Subscriptions.findByRoomId(findResult.room._id, {
+			sort: { 'u.username':  sort && sort.username ? sort.username : 1 },
 			skip: offset,
 			limit: count,
 		});
 
 		const total = cursor.count();
-
 		const members = cursor.fetch().map((s) => s.u && s.u.username);
 
 		const users = RocketChat.models.Users.find({ username: { $in: members } }, {
 			fields: { _id: 1, username: 1, name: 1, status: 1, utcOffset: 1 },
-			sort: { username:  sort.username != null ? sort.username : 1 },
+			sort: { username:  sort && sort.username ? sort.username : 1 },
 		}).fetch();
 
 		return RocketChat.API.v1.success({
@@ -216,7 +212,6 @@ RocketChat.API.v1.addRoute(['dm.messages', 'im.messages'], { authRequired: true 
 		const { offset, count } = this.getPaginationItems();
 		const { sort, fields, query } = this.parseJsonQuery();
 
-		console.log(findResult);
 		const ourQuery = Object.assign({}, query, { rid: findResult.room._id });
 
 		const messages = RocketChat.models.Messages.find(ourQuery, {
@@ -227,7 +222,7 @@ RocketChat.API.v1.addRoute(['dm.messages', 'im.messages'], { authRequired: true 
 		}).fetch();
 
 		return RocketChat.API.v1.success({
-			messages,
+			messages: messages.map((message) => RocketChat.composeMessageObjectWithUser(message, this.userId)),
 			count: messages.length,
 			offset,
 			total: RocketChat.models.Messages.find(ourQuery).count(),
@@ -245,7 +240,7 @@ RocketChat.API.v1.addRoute(['dm.messages.others', 'im.messages.others'], { authR
 			return RocketChat.API.v1.unauthorized();
 		}
 
-		const roomId = this.queryParams.roomId;
+		const { roomId } = this.queryParams;
 		if (!roomId || !roomId.trim()) {
 			throw new Meteor.Error('error-roomid-param-not-provided', 'The parameter "roomId" is required');
 		}
@@ -267,7 +262,7 @@ RocketChat.API.v1.addRoute(['dm.messages.others', 'im.messages.others'], { authR
 		}).fetch();
 
 		return RocketChat.API.v1.success({
-			messages: msgs,
+			messages: msgs.map((message) => RocketChat.composeMessageObjectWithUser(message, this.userId)),
 			offset,
 			count: msgs.length,
 			total: RocketChat.models.Messages.find(ourQuery).count(),
@@ -293,7 +288,7 @@ RocketChat.API.v1.addRoute(['dm.list', 'im.list'], { authRequired: true }, {
 		const rooms = cursor.fetch();
 
 		return RocketChat.API.v1.success({
-			ims: rooms,
+			ims: rooms.map((room) => this.composeRoomWithLastMessage(room, this.userId)),
 			offset,
 			count: rooms.length,
 			total,
@@ -320,7 +315,7 @@ RocketChat.API.v1.addRoute(['dm.list.everyone', 'im.list.everyone'], { authRequi
 		}).fetch();
 
 		return RocketChat.API.v1.success({
-			ims: rooms,
+			ims: rooms.map((room) => this.composeRoomWithLastMessage(room, this.userId)),
 			offset,
 			count: rooms.length,
 			total: RocketChat.models.Rooms.find(ourQuery).count(),

@@ -1,5 +1,10 @@
 /* globals fileUploadHandler */
 
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Tracker } from 'meteor/tracker';
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import { Template } from 'meteor/templating';
 import s from 'underscore.string';
 import toastr from 'toastr';
 import mime from 'mime-type/with-db';
@@ -65,7 +70,7 @@ Template.avatarPrompt.events({
 			if (s.trim($('#avatarurl').val())) {
 				Meteor.call('setAvatarFromService', $('#avatarurl').val(), '', this.service, function(err) {
 					if (err) {
-						if (err.details.timeToReset && err.details.timeToReset) {
+						if (err.details && err.details.timeToReset) {
 							toastr.error(t('error-too-many-requests', {
 								seconds: parseInt(err.details.timeToReset / 1000),
 							}));
@@ -81,9 +86,9 @@ Template.avatarPrompt.events({
 				toastr.error(t('Please_enter_value_for_url'));
 			}
 		} else if (this.service === 'upload') {
-			let files = instance.find('input[type=file]').files;
+			let { files } = instance.find('input[type=file]');
 			if (!files || files.length === 0) {
-				files = event.dataTransfer && event.dataTransfer.files || [];
+				files = (event.dataTransfer && event.dataTransfer.files) || [];
 			}
 
 			for (let i = 0; i < files.length; i++) {
@@ -139,7 +144,7 @@ Template.avatarPrompt.events({
 	},
 	'change .avatar-file-input'(event, template) {
 		const e = event.originalEvent || event;
-		let files = e.target.files;
+		let { files } = e.target;
 		if (!files || files.length === 0) {
 			files = (e.dataTransfer && e.dataTransfer.files) || [];
 		}

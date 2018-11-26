@@ -1,4 +1,9 @@
 /* globals WebRTC popover isRtl */
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Tracker } from 'meteor/tracker';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
 import _ from 'underscore';
 import { getActions } from './userActions';
 
@@ -197,7 +202,9 @@ Template.membersList.events({
 			user: this.user.user,
 			hideAdminControls: RocketChat.roomTypes.roomTypes[room.t].userDetailShowAdmin(room) || false,
 			directActions: RocketChat.roomTypes.roomTypes[room.t].userDetailShowAll(room) || false,
-		}).map((action) => (typeof action === 'function' ? action.call(this) : action)).filter((action) => action && (!action.condition || action.condition.call(this)));
+		})
+			.map((action) => (typeof action === 'function' ? action.call(this) : action))
+			.filter((action) => action && (!action.condition || action.condition.call(this)));
 		const groups = [];
 		const columns = [];
 		const admin = _actions.filter((action) => action.group === 'admin');

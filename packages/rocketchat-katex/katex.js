@@ -2,6 +2,9 @@
  * KaTeX is a fast, easy-to-use JavaScript library for TeX math rendering on the web.
  * https://github.com/Khan/KaTeX
  */
+import { Meteor } from 'meteor/meteor';
+import { Random } from 'meteor/random';
+import { Blaze } from 'meteor/blaze';
 import _ from 'underscore';
 import s from 'underscore.string';
 
@@ -101,7 +104,7 @@ class Katex {
 		const outer = new Boundary;
 
 		// The closing delimiter matching to the opening one
-		const closer = opening_delimiter_match.options.closer;
+		const { closer } = opening_delimiter_match.options;
 		outer.start = opening_delimiter_match.pos;
 		inner.start = opening_delimiter_match.pos + closer.length;
 

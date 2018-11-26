@@ -1,8 +1,9 @@
 import _ from 'underscore';
+import { Accounts } from 'meteor/accounts-base';
 
 const orig_updateOrCreateUserFromExternalService = Accounts.updateOrCreateUserFromExternalService;
 
-Accounts.updateOrCreateUserFromExternalService = function(serviceName, serviceData = {} /* , options*/) {
+Accounts.updateOrCreateUserFromExternalService = function(serviceName, serviceData = {}, ...args /* , options*/) {
 	const services = [
 		'facebook',
 		'github',
@@ -46,5 +47,5 @@ Accounts.updateOrCreateUserFromExternalService = function(serviceName, serviceDa
 		}
 	}
 
-	return orig_updateOrCreateUserFromExternalService.apply(this, arguments);
+	return orig_updateOrCreateUserFromExternalService.apply(this, [serviceName, serviceData, ...args]);
 };

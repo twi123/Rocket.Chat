@@ -1,3 +1,5 @@
+import { Meteor } from 'meteor/meteor';
+
 const msgStream = new Meteor.Streamer('room-messages');
 this.msgStream = msgStream;
 
@@ -34,6 +36,7 @@ msgStream.allowEmit('__my_messages__', function(eventName, msg, options) {
 
 		options.roomParticipant = RocketChat.models.Subscriptions.findOneByRoomIdAndUserId(room._id, this.userId, { fields: { _id: 1 } }) != null;
 		options.roomType = room.t;
+		options.roomName = room.name;
 
 		return true;
 	} catch (error) {

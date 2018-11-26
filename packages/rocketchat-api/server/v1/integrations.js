@@ -1,3 +1,7 @@
+import { Meteor } from 'meteor/meteor';
+import { Match, check } from 'meteor/check';
+import { RocketChat } from 'meteor/rocketchat:lib';
+
 RocketChat.API.v1.addRoute('integrations.create', { authRequired: true }, {
 	post() {
 		check(this.bodyParams, Match.ObjectIncluding({
@@ -49,7 +53,7 @@ RocketChat.API.v1.addRoute('integrations.history', { authRequired: true }, {
 			return RocketChat.API.v1.failure('Invalid integration id.');
 		}
 
-		const id = this.queryParams.id;
+		const { id } = this.queryParams;
 		const { offset, count } = this.getPaginationItems();
 		const { sort, fields, query } = this.parseJsonQuery();
 

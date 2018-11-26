@@ -1,3 +1,7 @@
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Tracker } from 'meteor/tracker';
+import { Template } from 'meteor/templating';
+
 Template.customFieldsForm.helpers({
 	new() {
 		return this.new;
@@ -25,7 +29,7 @@ Template.customFieldsForm.helpers({
 		return customFieldsArray;
 	},
 	selectedField(current, field) {
-		const formData = Template.instance().formData;
+		const { formData } = Template.instance();
 
 		if (typeof formData[field.fieldName] !== 'undefined') {
 			return formData[field.fieldName] === current;
@@ -34,7 +38,7 @@ Template.customFieldsForm.helpers({
 		}
 	},
 	fieldValue() {
-		const formData = Template.instance().formData;
+		const { formData } = Template.instance();
 
 		return formData[this.fieldName];
 	},

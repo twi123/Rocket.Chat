@@ -1,4 +1,7 @@
 /* globals EventEmitter LoggerManager SystemLogger Log*/
+import { Meteor } from 'meteor/meteor';
+import { Random } from 'meteor/random';
+import { EJSON } from 'meteor/ejson';
 import _ from 'underscore';
 import s from 'underscore.string';
 
@@ -256,9 +259,9 @@ class _Logger {
 		return lines;
 	}
 
-	_log(options) {
+	_log(options, ...args) {
 		if (LoggerManager.enabled === false) {
-			LoggerManager.addToQueue(this, arguments);
+			LoggerManager.addToQueue(this, [options, ...args]);
 			return;
 		}
 		if (options.level == null) {
@@ -327,7 +330,7 @@ SystemLogger = new Logger('System', { // eslint-disable-line no-undef
 const StdOut = new class extends EventEmitter {
 	constructor() {
 		super();
-		const write = process.stdout.write;
+		const { write } = process.stdout;
 		this.queue = [];
 		process.stdout.write = (...args) => {
 			write.apply(process.stdout, args);

@@ -1,4 +1,7 @@
 /* globals alerts */
+import { Blaze } from 'meteor/blaze';
+import { Template } from 'meteor/templating';
+
 this.alerts = {
 	renderedAlert: null,
 	open(config) {
@@ -23,7 +26,7 @@ this.alerts = {
 
 		Blaze.remove(this.renderedAlert);
 
-		const activeElement = this.renderedAlert.dataVar.curValue.activeElement;
+		const { activeElement } = this.renderedAlert.dataVar.curValue;
 		if (activeElement) {
 			$(activeElement).removeClass('active');
 		}

@@ -1,3 +1,9 @@
+import { SHA256 } from 'meteor/sha';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Meteor } from 'meteor/meteor';
+import { Tracker } from 'meteor/tracker';
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import { Template } from 'meteor/templating';
 import _ from 'underscore';
 import s from 'underscore.string';
 import toastr from 'toastr';
@@ -7,7 +13,7 @@ const validateUsername = (username) => {
 	const reg = new RegExp(`^${ RocketChat.settings.get('UTF8_Names_Validation') }$`);
 	return reg.test(username);
 };
-const validateName = (name) => name.length;
+const validateName = (name) => name && name.length;
 const validatePassword = (password, confirmationPassword) => {
 	if (!confirmationPassword) {
 		return true;
@@ -69,14 +75,16 @@ Template.accountProfile.helpers({
 	},
 	services() {
 		const suggestions = Template.instance().suggestions.get();
-		return ['gravatar', 'facebook', 'google', 'github', 'gitlab', 'linkedIn', 'twitter']
-			.map((service) => ({
+
+		if (suggestions.avatars) {
+			return Object.keys(suggestions.avatars).map((service) => ({
 				name: service,
 				// TODO: improve this fix
 				service: !suggestions.avatars[service.toLowerCase()] ? RocketChat.settings.get(`Accounts_OAuth_${ s.capitalize(service.toLowerCase()) }`) : false,
 				suggestion: suggestions.avatars[service.toLowerCase()],
 			}))
-			.filter(({ service, suggestion }) => service || suggestion);
+				.filter(({ service, suggestion }) => service || suggestion);
+		}
 	},
 	initialsUsername() {
 		const user = Meteor.user();
@@ -342,7 +350,7 @@ Template.accountProfile.events({
 	'input [name=email]'(e, instance) {
 		const input = e.target;
 		const position = input.selectionEnd || input.selectionStart;
-		const length = input.value.length;
+		const { length } = input.value;
 		const modified = filterEmail(input.value);
 		input.value = modified;
 		document.activeElement === input && e && /input/i.test(e.type) && (input.selectionEnd = position + input.value.length - length);
@@ -351,7 +359,7 @@ Template.accountProfile.events({
 	'input [name=username]'(e, instance) {
 		const input = e.target;
 		const position = input.selectionEnd || input.selectionStart;
-		const length = input.value.length;
+		const { length } = input.value;
 		const modified = filterNames(input.value);
 		input.value = modified;
 		document.activeElement === input && e && /input/i.test(e.type) && (input.selectionEnd = position + input.value.length - length);
@@ -499,7 +507,7 @@ Template.accountProfile.events({
 	},
 	'change .js-select-avatar-upload [type=file]'(event, template) {
 		const e = event.originalEvent || event;
-		let files = e.target.files;
+		let { files } = e.target;
 		if (!files || files.length === 0) {
 			files = (e.dataTransfer && e.dataTransfer.files) || [];
 		}

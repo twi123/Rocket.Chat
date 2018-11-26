@@ -1,3 +1,5 @@
+import { Meteor } from 'meteor/meteor';
+import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import s from 'underscore.string';
 
 function fetchRooms(userId, rooms) {
@@ -33,13 +35,14 @@ Meteor.methods({
 			fields: {
 				t: 1,
 				name: 1,
+				joinCodeRequired: 1,
 				lastMessage: 1,
 			},
 			sort: {
 				name: 1,
 			},
 		};
-		const userId = this.userId;
+		const { userId } = this;
 		if (userId == null) {
 			if (RocketChat.settings.get('Accounts_AllowAnonymousRead') === true) {
 				result.rooms = fetchRooms(userId, RocketChat.models.Rooms.findByNameAndTypeNotDefault(regex, 'c', roomOptions).fetch());

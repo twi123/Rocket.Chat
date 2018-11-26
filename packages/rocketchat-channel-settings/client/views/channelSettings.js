@@ -1,8 +1,13 @@
 /* globals popover */
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Template } from 'meteor/templating';
+import { TAPi18n } from 'meteor/tap:i18n';
 import toastr from 'toastr';
 import moment from 'moment';
 import s from 'underscore.string';
 import { call, erase, hide, leave, RocketChat, RoomSettingsEnum } from 'meteor/rocketchat:lib';
+import { modal, t, ChatRoom } from 'meteor/rocketchat:ui';
 
 const common = {
 	canLeaveRoom() {
@@ -118,7 +123,20 @@ function roomMaxAge(room) {
 	return roomMaxAgeDefault(room.t);
 }
 
+const fixRoomName = (old) => {
+	if (RocketChat.settings.get('UI_Allow_room_names_with_special_chars')) {
+		return old;
+	}
+	const reg = new RegExp(`^${ RocketChat.settings.get('UTF8_Names_Validation') }$`);
+	return [...old.replace(' ', '').toLocaleLowerCase()].filter((f) => reg.test(f)).join('');
+};
+
 Template.channelSettingsEditing.events({
+	'input [name="name"]'(e) {
+		const input = e.currentTarget;
+		const modified = fixRoomName(input.value);
+		input.value = modified;
+	},
 	'input .js-input'(e) {
 		this.value.set(e.currentTarget.value);
 	},
@@ -150,13 +168,15 @@ Template.channelSettingsEditing.events({
 			value: 'disabled',
 		}];
 
-		const value = this.value.get() ? 'enabled' : this.value.get() === false ? 'disabled' : 'default';
+		const falseOrDisabled = this.value.get() === false ? 'disabled' : 'default';
+		const value = this.value.get() ? 'enabled' : falseOrDisabled;
 		const config = {
 			popoverClass: 'notifications-preferences',
 			template: 'pushNotificationsPopover',
 			data: {
 				change : (value) => {
-					const realValue = value === 'enabled' ? true : value === 'disabled' ? false : undefined;
+					const falseOrUndefined = value === 'disabled' ? false : undefined;
+					const realValue = value === 'enabled' ? true : falseOrUndefined;
 					return this.value.set(realValue);
 				},
 				value,
@@ -622,6 +642,25 @@ Template.channelSettingsEditing.onCreated(function() {
 				);
 			},
 		},
+		encrypted: {
+			type: 'boolean',
+			label: 'Encrypted',
+			isToggle: true,
+			processing: new ReactiveVar(false),
+			canView() {
+				return RocketChat.roomTypes.roomTypes[room.t].allowRoomSettingChange(room, RoomSettingsEnum.E2E);
+			},
+			canEdit() {
+				return RocketChat.authz.hasAllPermission('edit-room', room._id);
+			},
+			save(value) {
+				return call('saveRoomSettings', room._id, 'encrypted', value).then(() => {
+					toastr.success(
+						t('Encrypted_setting_changed_successfully')
+					);
+				});
+			},
+		},
 	};
 	Object.keys(this.settings).forEach((key) => {
 		const setting = this.settings[key];
@@ -695,7 +734,7 @@ Template.channelSettingsEditing.helpers({
 	},
 	retentionEnabled(value) {
 		const { room } = Template.instance();
-		return value || value === undefined && retentionEnabled(room);
+		return (value || value === undefined) && retentionEnabled(room);
 	},
 	retentionMaxAgeLabel(label) {
 		const { room } = Template.instance();

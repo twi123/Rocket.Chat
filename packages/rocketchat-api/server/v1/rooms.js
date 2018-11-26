@@ -1,3 +1,6 @@
+import { Meteor } from 'meteor/meteor';
+import { RocketChat } from 'meteor/rocketchat:lib';
+import { FileUpload } from 'meteor/rocketchat:file-upload';
 import Busboy from 'busboy';
 
 function findRoomByIdOrName({ params, checkedArchived = true }) {
@@ -46,7 +49,10 @@ RocketChat.API.v1.addRoute('rooms.get', { authRequired: true }, {
 			};
 		}
 
-		return RocketChat.API.v1.success(result);
+		return RocketChat.API.v1.success({
+			update: result.update.map((room) => this.composeRoomWithLastMessage(room, this.userId)),
+			remove: result.remove.map((room) => this.composeRoomWithLastMessage(room, this.userId)),
+		});
 	},
 });
 
@@ -120,9 +126,11 @@ RocketChat.API.v1.addRoute('rooms.upload/:rid', { authRequired: true }, {
 RocketChat.API.v1.addRoute('rooms.saveNotification', { authRequired: true }, {
 	post() {
 		const saveNotifications = (notifications, roomId) => {
-			Object.keys(notifications).map((notificationKey) => {
-				Meteor.runAsUser(this.userId, () => Meteor.call('saveNotificationSettings', roomId, notificationKey, notifications[notificationKey]));
-			});
+			Object.keys(notifications).forEach((notificationKey) =>
+				Meteor.runAsUser(this.userId, () =>
+					Meteor.call('saveNotificationSettings', roomId, notificationKey, notifications[notificationKey])
+				)
+			);
 		};
 		const { roomId, notifications } = this.bodyParams;
 
@@ -171,16 +179,41 @@ RocketChat.API.v1.addRoute('rooms.cleanHistory', { authRequired: true }, {
 		const latest = new Date(this.bodyParams.latest);
 		const oldest = new Date(this.bodyParams.oldest);
 
-		let inclusive = false;
-		if (typeof this.bodyParams.inclusive !== 'undefined') {
-			inclusive = this.bodyParams.inclusive;
-		}
+		const inclusive = this.bodyParams.inclusive || false;
 
-		Meteor.runAsUser(this.userId, () => {
-			Meteor.call('cleanRoomHistory', { roomId: findResult._id, latest, oldest, inclusive, limit: this.bodyParams.limit, excludePinned: this.bodyParams.excludePinned, filesOnly: this.bodyParams.filesOnly, fromUsers: this.bodyParams.users });
-		});
+		Meteor.runAsUser(this.userId, () => Meteor.call('cleanRoomHistory', {
+			roomId: findResult._id,
+			latest,
+			oldest,
+			inclusive,
+			limit: this.bodyParams.limit,
+			excludePinned: this.bodyParams.excludePinned,
+			filesOnly: this.bodyParams.filesOnly,
+			fromUsers: this.bodyParams.users,
+		}));
 
 		return RocketChat.API.v1.success();
 	},
 });
 
+RocketChat.API.v1.addRoute('rooms.info', { authRequired: true }, {
+	get() {
+		const room = findRoomByIdOrName({ params: this.requestParams() });
+		const { fields } = this.parseJsonQuery();
+		if (!Meteor.call('canAccessRoom', room._id, this.userId, {})) {
+			return RocketChat.API.v1.failure('not-allowed', 'Not Allowed');
+		}
+		return RocketChat.API.v1.success({ room: RocketChat.models.Rooms.findOneByIdOrName(room._id, { fields }) });
+	},
+});
+
+RocketChat.API.v1.addRoute('rooms.leave', { authRequired: true }, {
+	post() {
+		const room = findRoomByIdOrName({ params: this.bodyParams });
+		Meteor.runAsUser(this.userId, () => {
+			Meteor.call('leaveRoom', room._id);
+		});
+
+		return RocketChat.API.v1.success();
+	},
+});

@@ -1,5 +1,13 @@
 /* globals chatMessages, fileUpload , fireGlobalEvent , cordova , readMessage , RoomRoles, popover , device */
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Random } from 'meteor/random';
+import { Tracker } from 'meteor/tracker';
+import { Blaze } from 'meteor/blaze';
+import { FlowRouter } from 'meteor/kadira:flow-router';
 import { RocketChatTabBar } from 'meteor/rocketchat:lib';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
 
 import _ from 'underscore';
 import moment from 'moment';
@@ -210,7 +218,7 @@ Template.room.helpers({
 	},
 
 	embeddedVersion() {
-		RocketChat.Layout.isEmbedded();
+		return RocketChat.Layout.isEmbedded();
 	},
 
 	subscribed() {
@@ -400,8 +408,7 @@ Template.room.helpers({
 	},
 
 	messageViewMode() {
-		const user = Meteor.user();
-		const viewMode = RocketChat.getUserPreference(user, 'messageViewMode');
+		const viewMode = RocketChat.getUserPreference(Meteor.userId(), 'messageViewMode');
 		const modes = ['', 'cozy', 'compact'];
 		return modes[viewMode] || modes[0];
 	},
@@ -411,13 +418,11 @@ Template.room.helpers({
 	},
 
 	hideUsername() {
-		const user = Meteor.user();
-		return RocketChat.getUserPreference(user, 'hideUsernames') ? 'hide-usernames' : undefined;
+		return RocketChat.getUserPreference(Meteor.userId(), 'hideUsernames') ? 'hide-usernames' : undefined;
 	},
 
 	hideAvatar() {
-		const user = Meteor.user();
-		return RocketChat.getUserPreference(user, 'hideAvatars') ? 'hide-avatars' : undefined;
+		return RocketChat.getUserPreference(Meteor.userId(), 'hideAvatars') ? 'hide-avatars' : undefined;
 	},
 
 	userCanDrop() {
@@ -495,15 +500,13 @@ Template.room.events({
 	},
 
 	'click .messages-container-main'() {
-		const user = Meteor.user();
-
-		if ((Template.instance().tabBar.getState() === 'opened') && RocketChat.getUserPreference(user, 'hideFlexTab')) {
+		if (Template.instance().tabBar.getState() === 'opened' && RocketChat.getUserPreference(Meteor.userId(), 'hideFlexTab')) {
 			Template.instance().tabBar.close();
 		}
 	},
 
 	'touchstart .message'(e, t) {
-		const touches = e.originalEvent.touches;
+		const { touches } = e.originalEvent;
 		if (touches && touches.length) {
 			lastTouchX = touches[0].pageX;
 			lastTouchY = touches[0].pagey;
@@ -568,7 +571,7 @@ Template.room.events({
 	},
 
 	'touchmove .message'(e, t) {
-		const touches = e.originalEvent.touches;
+		const { touches } = e.originalEvent;
 		if (touches && touches.length) {
 			const deltaX = Math.abs(lastTouchX - touches[0].pageX);
 			const deltaY = Math.abs(lastTouchY - touches[0].pageY);
@@ -635,13 +638,12 @@ Template.room.events({
 			return;
 		}
 
-		const username = this._arguments[1].u.username;
+		const { username } = this._arguments[1].u;
 
 		openProfileTabOrOpenDM(e, instance, username);
 	},
 
 	'scroll .wrapper': _.throttle(function(e, t) {
-
 		lazyloadtick();
 
 		const $roomLeader = $('.room-leader');
@@ -654,10 +656,14 @@ Template.room.events({
 		}
 		lastScrollTop = e.target.scrollTop;
 
-		if (RoomHistoryManager.isLoading(this._id) === false && RoomHistoryManager.hasMore(this._id) === true || RoomHistoryManager.hasMoreNext(this._id) === true) {
-			if (RoomHistoryManager.hasMore(this._id) === true && e.target.scrollTop === 0) {
+		const isLoading = RoomHistoryManager.isLoading(this._id);
+		const hasMore = RoomHistoryManager.hasMore(this._id);
+		const hasMoreNext = RoomHistoryManager.hasMoreNext(this._id);
+
+		if ((isLoading === false && hasMore === true) || hasMoreNext === true) {
+			if (hasMore === true && e.target.scrollTop === 0) {
 				RoomHistoryManager.getMore(this._id);
-			} else if (RoomHistoryManager.hasMoreNext(this._id) === true && e.target.scrollTop >= e.target.scrollHeight - e.target.clientHeight) {
+			} else if (hasMoreNext === true && Math.ceil(e.target.scrollTop) >= e.target.scrollHeight - e.target.clientHeight) {
 				RoomHistoryManager.getMoreNext(this._id);
 			}
 		}
@@ -839,6 +845,17 @@ Template.room.events({
 		const id = e.currentTarget.dataset.message;
 		document.querySelector(`#${ id }`).classList.toggle('message--ignored');
 	},
+	'click .js-actionButton-sendMessage'(event, instance) {
+		const rid = instance.data._id;
+		const msg = event.currentTarget.value;
+		const msgObject = { _id: Random.id(), rid, msg };
+		if (!msg) {
+			return;
+		}
+		RocketChat.promises.run('onClientBeforeSendMessage', msgObject).then((msgObject) => {
+			Meteor.call('sendMessage', msgObject);
+		});
+	},
 });
 
 
@@ -931,7 +948,7 @@ Template.room.onCreated(function() {
 			handleError(error);
 		}
 
-		return Array.from(results).map((record) => {
+		return Array.from(results).forEach((record) => {
 			delete record._id;
 			RoomRoles.upsert({ rid: record.rid, 'u._id': record.u._id }, record);
 		});

@@ -1,3 +1,11 @@
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { ReactiveDict } from 'meteor/reactive-dict';
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
+import { TAPi18n } from 'meteor/tap:i18n';
+
 const cannotSetup = () => {
 	const showSetupWizard = RocketChat.settings.get('Show_Setup_Wizard');
 	if (!showSetupWizard) {
@@ -93,7 +101,7 @@ Template.setupWizard.onCreated(function() {
 	}
 
 	const jsonString = localStorage.getItem('wizard');
-	const state = jsonString && JSON.parse(jsonString) || {};
+	const state = (jsonString && JSON.parse(jsonString)) || {};
 	Object.entries(state).forEach((entry) => this.state.set(...entry));
 
 	this.autorun((c) => {

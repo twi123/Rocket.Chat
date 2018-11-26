@@ -1,4 +1,8 @@
 /* globals OAuth*/
+import { Meteor } from 'meteor/meteor';
+import { Match } from 'meteor/check';
+import { Accounts } from 'meteor/accounts-base';
+import { HTTP } from 'meteor/http';
 import _ from 'underscore';
 
 const logger = new Logger('CustomOAuth');
@@ -326,11 +330,11 @@ export class CustomOAuth {
 }
 
 
-const updateOrCreateUserFromExternalService = Accounts.updateOrCreateUserFromExternalService;
-Accounts.updateOrCreateUserFromExternalService = function(/* serviceName, serviceData, options*/) {
+const { updateOrCreateUserFromExternalService } = Accounts;
+Accounts.updateOrCreateUserFromExternalService = function(...args /* serviceName, serviceData, options*/) {
 	for (const hook of BeforeUpdateOrCreateUserFromExternalService) {
-		hook.apply(this, arguments);
+		hook.apply(this, args);
 	}
 
-	return updateOrCreateUserFromExternalService.apply(this, arguments);
+	return updateOrCreateUserFromExternalService.apply(this, args);
 };

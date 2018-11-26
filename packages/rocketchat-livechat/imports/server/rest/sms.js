@@ -1,3 +1,5 @@
+import { Meteor } from 'meteor/meteor';
+import { Random } from 'meteor/random';
 import LivechatVisitors from '../../../server/models/LivechatVisitors';
 
 RocketChat.API.v1.addRoute('livechat/sms-incoming/:service', {
@@ -51,7 +53,7 @@ RocketChat.API.v1.addRoute('livechat/sms-incoming/:service', {
 				message_link: curr.url,
 			};
 
-			const contentType = curr.contentType;
+			const { contentType } = curr;
 			switch (contentType.substr(0, contentType.indexOf('/'))) {
 				case 'image':
 					attachment.image_url = curr.url;

@@ -1,5 +1,6 @@
 /* eslint new-cap:0 */
 
+import { Meteor } from 'meteor/meteor';
 import { Template } from 'meteor/templating';
 import { Blaze } from 'meteor/blaze';
 import { HTML } from 'meteor/htmljs';
@@ -30,9 +31,9 @@ Blaze.toHTMLWithDataNonReactive = function(content, data) {
 	return Tracker.nonreactive(() => Blaze.toHTMLWithData(content, data));
 };
 
-Blaze.registerHelper('nrrargs', function() {
+Blaze.registerHelper('nrrargs', function(...args) {
 	return {
-		_arguments: arguments,
+		_arguments: args,
 	};
 });
 

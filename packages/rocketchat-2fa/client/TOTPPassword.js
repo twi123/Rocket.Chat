@@ -1,3 +1,6 @@
+import { Meteor } from 'meteor/meteor';
+import { Accounts } from 'meteor/accounts-base';
+import { t, modal } from 'meteor/rocketchat:ui';
 import toastr from 'toastr';
 
 function reportError(error, callback) {
@@ -37,7 +40,7 @@ Meteor.loginWithPasswordAndTOTP = function(selector, password, code, callback) {
 	});
 };
 
-const loginWithPassword = Meteor.loginWithPassword;
+const { loginWithPassword } = Meteor;
 
 Meteor.loginWithPassword = function(email, password, cb) {
 	loginWithPassword(email, password, (error) => {

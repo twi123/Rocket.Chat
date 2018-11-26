@@ -1,3 +1,9 @@
+import { Meteor } from 'meteor/meteor';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Blaze } from 'meteor/blaze';
+import { Session } from 'meteor/session';
+import { Template } from 'meteor/templating';
+import { AutoComplete } from 'meteor/mizzao:autocomplete';
 import toastr from 'toastr';
 
 const acEvents = {
@@ -81,7 +87,7 @@ Template.inviteUsers.events({
 	'input [name="users"]'(e, t) {
 		const input = e.target;
 		const position = input.selectionEnd || input.selectionStart;
-		const length = input.value.length;
+		const { length } = input.value;
 		const modified = filterNames(input.value);
 		input.value = modified;
 		document.activeElement === input && e && /input/i.test(e.type) && (input.selectionEnd = position + input.value.length - length);
@@ -116,7 +122,7 @@ Template.inviteUsers.onRendered(function() {
 		users.set(usersArr);
 	});
 });
-/* global AutoComplete Deps */
+/* global Deps */
 Template.inviteUsers.onCreated(function() {
 	this.selectedUsers = new ReactiveVar([]);
 	const filter = { exceptions :[Meteor.user().username].concat(this.selectedUsers.get().map((u) => u.username)) };

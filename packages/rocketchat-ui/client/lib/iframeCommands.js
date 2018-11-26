@@ -1,3 +1,6 @@
+import { Meteor } from 'meteor/meteor';
+import { FlowRouter } from 'meteor/kadira:flow-router';
+import { Session } from 'meteor/session';
 import s from 'underscore.string';
 
 const commands = {
@@ -37,10 +40,10 @@ const commands = {
 		}
 	},
 
-	'login-with-token'(data) {
+	'login-with-token'(data, ...args) {
 		if (typeof data.token === 'string') {
 			Meteor.loginWithToken(data.token, function() {
-				console.log('Iframe command [login-with-token]: result', arguments);
+				console.log('Iframe command [login-with-token]: result', [data, ...args]);
 			});
 		}
 	},

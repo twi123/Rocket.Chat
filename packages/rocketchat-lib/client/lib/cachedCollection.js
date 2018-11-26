@@ -1,3 +1,9 @@
+import { Meteor } from 'meteor/meteor';
+import { check } from 'meteor/check';
+import { Mongo } from 'meteor/mongo';
+import { Accounts } from 'meteor/accounts-base';
+import { ReactiveVar } from 'meteor/reactive-var';
+import { Tracker } from 'meteor/tracker';
 import localforage from 'localforage';
 import _ from 'underscore';
 
@@ -9,7 +15,7 @@ class CachedCollectionManager {
 		this.loginCb = [];
 		this.logged = false;
 
-		const _unstoreLoginToken = Accounts._unstoreLoginToken;
+		const { _unstoreLoginToken } = Accounts;
 		Accounts._unstoreLoginToken = (...args) => {
 			_unstoreLoginToken.apply(Accounts, args);
 			this.clearAllCacheOnLogout();
@@ -20,7 +26,7 @@ class CachedCollectionManager {
 		Meteor.setTimeout(() => {
 			let connectionWasOnline = true;
 			Tracker.autorun(() => {
-				const connected = Meteor.connection.status().connected;
+				const { connected } = Meteor.connection.status();
 
 				if (connected === true && connectionWasOnline === false) {
 					for (const cb of this.reconnectCb) {

@@ -1,3 +1,4 @@
+import { Meteor } from 'meteor/meteor';
 import { EmailReplyParser as reply } from 'emailreplyparser';
 import moment from 'moment';
 
@@ -75,7 +76,7 @@ RocketChat.processDirectEmail = function(email) {
 		message.msg = prevMessageLink + message.msg;
 
 		const subscription = RocketChat.models.Subscriptions.findOneByRoomIdAndUserId(message.rid, user._id);
-		if (subscription && subscription.blocked || subscription.blocker) {
+		if (subscription && (subscription.blocked || subscription.blocker)) {
 			// room is blocked
 			return false;
 		}
